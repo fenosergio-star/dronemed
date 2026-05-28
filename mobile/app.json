@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -26,7 +26,11 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
-        "INTERNET"
+        "INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -36,7 +40,10 @@
       "expo-secure-store"
     ],
     "extra": {
-      "apiUrl": "http://10.225.103.33:3000/api"
+      "apiUrl": "https://dronemed-backend.onrender.com",
+      "eas": {
+        "projectId": "2b8db00f-b51c-4d9d-bda5-c8e0e2d52717"
+      }
     }
   }
 }

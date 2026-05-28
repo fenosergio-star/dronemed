@@ -1,66 +1,42 @@
 import { Request, Response } from 'express';
-import { Drone, DroneStatus } from '../../../../shared/types';
-import { v4 as uuidv4 } from 'uuid';
+import { DroneRepo } from '../../database/repository';
 import { droneSimulator } from './drone-simulator';
 
-interface DroneWithMeta extends Drone {
-  lastUpdated: string;
-  missionCount: number;
-  currentLat?: number;
-  currentLng?: number;
-}
-
-const fleet: Map<string, DroneWithMeta> = new Map();
-
 export class FleetController {
-  static register(req: Request, res: Response): void {
-    const drone: DroneWithMeta = {
-      id: uuidv4(),
-      ...req.body,
-      currentPayload: 0,
-      status: 'idle',
-      lastUpdated: new Date().toISOString(),
-      missionCount: 0,
-    };
-    fleet.set(drone.id, drone);
+  static async register(req: Request, res: Response): Promise<void> {
+    const drone = await DroneRepo.create(req.body);
+    if (!drone) { res.status(400).json({ success: false, error: 'Création échouée' }); return; }
     droneSimulator.registerDrone(drone.id, drone.name, {
-      lat: drone.currentLat || -18.7669,
-      lng: drone.currentLng || 46.8691,
+      lat: (drone as any).currentLat || -18.7669,
+      lng: (drone as any).currentLng || 46.8691,
     });
     res.status(201).json({ success: true, data: drone });
   }
 
-  static getAll(req: Request, res: Response): void {
-    const drones = Array.from(fleet.values());
+  static async getAll(req: Request, res: Response): Promise<void> {
+    const drones = await DroneRepo.getAll();
     res.json({ success: true, data: drones, total: drones.length });
   }
 
-  static getById(req: Request, res: Response): void {
-    const drone = fleet.get(req.params.id);
+  static async getById(req: Request, res: Response): Promise<void> {
+    const drone = await DroneRepo.getById(req.params.id);
     if (!drone) { res.status(404).json({ success: false, error: 'Drone non trouvé' }); return; }
     res.json({ success: true, data: drone });
   }
 
-  static updateStatus(req: Request, res: Response): void {
-    const drone = fleet.get(req.params.id);
+  static async updateStatus(req: Request, res: Response): Promise<void> {
+    const drone = await DroneRepo.update(req.params.id, req.body);
     if (!drone) { res.status(404).json({ success: false, error: 'Drone non trouvé' }); return; }
-    const { status, currentBattery, currentLat, currentLng } = req.body;
-    if (status) drone.status = status;
-    if (currentBattery !== undefined) drone.currentBattery = currentBattery;
-    if (currentLat !== undefined) drone.currentLat = currentLat;
-    if (currentLng !== undefined) drone.currentLng = currentLng;
-    drone.lastUpdated = new Date().toISOString();
     res.json({ success: true, data: drone });
   }
 
-  static getAvailable(req: Request, res: Response): void {
-    const available = Array.from(fleet.values())
-      .filter(d => d.status === 'idle' && d.currentBattery >= 40);
+  static async getAvailable(req: Request, res: Response): Promise<void> {
+    const available = await DroneRepo.getAvailable();
     res.json({ success: true, data: available, total: available.length });
   }
 
-  static getBatteryStatus(req: Request, res: Response): void {
-    const drone = fleet.get(req.params.id);
+  static async getBatteryStatus(req: Request, res: Response): Promise<void> {
+    const drone = await DroneRepo.getById(req.params.id);
     if (!drone) { res.status(404).json({ success: false }); return; }
     res.json({
       success: true,

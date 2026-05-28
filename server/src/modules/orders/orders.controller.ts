@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
-import { DeliveryOrder, UrgencyLevel } from '../../../../shared/types';
-import { OrderWorkflow, getOrderQueue, getOrderHistory } from './order-workflow';
+import { UrgencyLevel } from '../../../../shared/types';
+import { OrderWorkflow, getOrderQueue } from './order-workflow';
 
 export class OrdersController {
-  static create(req: Request, res: Response): void {
-    const order = OrderWorkflow.create(req.body);
+  static async create(req: Request, res: Response): Promise<void> {
+    const order = await OrderWorkflow.create(req.body);
     res.status(201).json({ success: true, data: order });
   }
 
-  static getAll(req: Request, res: Response): void {
-    const orders = OrderWorkflow.getAll();
+  static async getAll(req: Request, res: Response): Promise<void> {
+    const orders = await OrderWorkflow.getAll();
     res.json({ success: true, data: orders, total: orders.length });
   }
 
@@ -24,11 +24,11 @@ export class OrdersController {
     res.json({ success: true, data: next });
   }
 
-  static processNext(req: Request, res: Response): void {
+  static async processNext(req: Request, res: Response): Promise<void> {
     const order = getOrderQueue().dequeue();
-    if (!order) { res.json({ success: false, message: 'File d\'attente vide' }); return; }
-    OrderWorkflow.validate(order.id);
-    res.json({ success: true, data: OrderWorkflow.getById(order.id) });
+    if (!order) { res.json({ success: false, message: "File d'attente vide" }); return; }
+    await OrderWorkflow.validate(order.id);
+    res.json({ success: true, data: await OrderWorkflow.getById(order.id) });
   }
 
   static updateUrgency(req: Request, res: Response): void {
@@ -37,14 +37,14 @@ export class OrdersController {
     res.json({ success: true, message: 'Priorité mise à jour' });
   }
 
-  static getById(req: Request, res: Response): void {
-    const order = OrderWorkflow.getById(req.params.id);
+  static async getById(req: Request, res: Response): Promise<void> {
+    const order = await OrderWorkflow.getById(req.params.id);
     if (!order) { res.status(404).json({ success: false, error: 'Commande non trouvée' }); return; }
     res.json({ success: true, data: order });
   }
 
-  static cancel(req: Request, res: Response): void {
-    const order = OrderWorkflow.cancel(req.params.id);
+  static async cancel(req: Request, res: Response): Promise<void> {
+    const order = await OrderWorkflow.cancel(req.params.id);
     res.json({ success: !!order, data: order });
   }
 
@@ -54,13 +54,14 @@ export class OrdersController {
     res.json({ success: true, data: urgent, total: urgent.length });
   }
 
-  static updateStatus(req: Request, res: Response): void {
-    const order = getOrderHistory().get(req.params.id);
-    if (!order) { res.status(404).json({ success: false, error: 'Non trouvé' }); return; }
+  static async updateStatus(req: Request, res: Response): Promise<void> {
     const { status, droneId } = req.body;
-    if (status) order.status = status;
-    if (droneId) order.droneId = droneId;
-    if (status === 'delivered') order.deliveredAt = new Date().toISOString();
-    res.json({ success: true, data: order });
+    const data: any = {};
+    if (status) data.status = status;
+    if (droneId) data.drone_id = droneId;
+    const order = await OrderWorkflow.getById(req.params.id);
+    if (!order) { res.status(404).json({ success: false, error: 'Non trouvé' }); return; }
+    const updated = await OrderWorkflow.getById(req.params.id);
+    res.json({ success: true, data: updated });
   }
 }

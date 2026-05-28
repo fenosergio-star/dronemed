@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { getOrderHistory } from './order-workflow';
+import { OrderRepo } from '../../database/repository';
 
 export class StatisticsController {
-  static getDashboard(req: Request, res: Response): void {
-    const orders = Array.from(getOrderHistory().values());
+  static async getDashboard(req: Request, res: Response): Promise<void> {
+    const orders = await OrderRepo.getAll();
     const total = orders.length;
     const delivered = orders.filter(o => o.status === 'delivered').length;
     const inTransit = orders.filter(o => o.status === 'in_transit').length;
@@ -52,8 +52,8 @@ export class StatisticsController {
     });
   }
 
-  static getDeliveryTimes(req: Request, res: Response): void {
-    const orders = Array.from(getOrderHistory().values()).filter(
+  static async getDeliveryTimes(req: Request, res: Response): Promise<void> {
+    const orders = (await OrderRepo.getAll()).filter(
       o => o.status === 'delivered' && o.deliveredAt && o.requestedAt
     );
 
@@ -65,7 +65,7 @@ export class StatisticsController {
       ),
     }));
 
-    const byUrgency = {
+    const byUrgency: Record<string, typeof times> = {
       critique: times.filter(t => t.urgency === 'critique'),
       vitale: times.filter(t => t.urgency === 'vitale'),
       urgent: times.filter(t => t.urgency === 'urgent'),
@@ -82,8 +82,8 @@ export class StatisticsController {
     res.json({ success: true, data: { times, averages } });
   }
 
-  static getFleetStats(req: Request, res: Response): void {
-    const orders = Array.from(getOrderHistory().values());
+  static async getFleetStats(req: Request, res: Response): Promise<void> {
+    const orders = await OrderRepo.getAll();
     const droneUsage: Record<string, number> = {};
     orders.filter(o => o.droneId).forEach(o => {
       droneUsage[o.droneId!] = (droneUsage[o.droneId!] || 0) + 1;
@@ -99,7 +99,7 @@ export class StatisticsController {
     });
   }
 
-  static getInventoryAlerts(req: Request, res: Response): void {
+  static getInventoryAlerts(_req: Request, res: Response): void {
     res.json({
       success: true,
       data: {
@@ -108,9 +108,9 @@ export class StatisticsController {
         expired: 0,
         alerts: [],
         recommendations: [
-          'Vérifier les stocks de vaccins antirabiques dans les régions à forte densité canine',
-          'Augmenter le stock d\'Artésunate en saison des pluies (paludisme)',
-          'Prévoir des poches de sang O- dans les CSB2 isolés',
+          "Vérifier les stocks de vaccins antirabiques dans les régions à forte densité canine",
+          "Augmenter le stock d'Artésunate en saison des pluies (paludisme)",
+          "Prévoir des poches de sang O- dans les CSB2 isolés",
         ],
       },
     });

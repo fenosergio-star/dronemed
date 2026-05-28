@@ -1,22 +1,20 @@
 import { Request, Response } from 'express';
 import { OrderWorkflow } from './order-workflow';
-import { droneSimulator } from '../fleet/drone-simulator';
 
 export class OrderWorkflowController {
-  static getPending(req: Request, res: Response): void {
-    const orders = OrderWorkflow.getAll().filter(o => o.status === 'pending');
+  static async getPending(req: Request, res: Response): Promise<void> {
+    const orders = await OrderWorkflow.getByStatus('pending');
     res.json({ success: true, data: orders, total: orders.length });
   }
 
-  static getActive(req: Request, res: Response): void {
-    const orders = OrderWorkflow.getAll().filter(
-      o => o.status === 'validated' || o.status === 'in_transit'
-    );
+  static async getActive(req: Request, res: Response): Promise<void> {
+    const all = await OrderWorkflow.getAll();
+    const orders = all.filter(o => o.status === 'validated' || o.status === 'in_transit');
     res.json({ success: true, data: orders, total: orders.length });
   }
 
-  static validate(req: Request, res: Response): void {
-    const order = OrderWorkflow.validate(req.params.id);
+  static async validate(req: Request, res: Response): Promise<void> {
+    const order = await OrderWorkflow.validate(req.params.id);
     if (!order) {
       res.status(400).json({ success: false, error: 'Validation impossible' });
       return;
@@ -24,9 +22,9 @@ export class OrderWorkflowController {
     res.json({ success: true, data: order });
   }
 
-  static assignDrone(req: Request, res: Response): void {
+  static async assignDrone(req: Request, res: Response): Promise<void> {
     const { droneId } = req.body;
-    const order = OrderWorkflow.assignDrone(req.params.id, droneId);
+    const order = await OrderWorkflow.assignDrone(req.params.id, droneId);
     if (!order) {
       res.status(400).json({ success: false, error: 'Assignation impossible' });
       return;
@@ -50,9 +48,9 @@ export class OrderWorkflowController {
     res.json({ success: true, data: result.order, qrCode: result.order!.qrCode });
   }
 
-  static confirmDelivery(req: Request, res: Response): void {
+  static async confirmDelivery(req: Request, res: Response): Promise<void> {
     const { code } = req.body;
-    const order = OrderWorkflow.confirmDelivery(req.params.id, code);
+    const order = await OrderWorkflow.confirmDelivery(req.params.id, code);
     if (!order) {
       res.status(400).json({ success: false, error: 'Code invalide ou commande introuvable' });
       return;

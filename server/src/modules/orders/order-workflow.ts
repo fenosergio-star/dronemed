@@ -1,45 +1,42 @@
-import { DeliveryOrder, Drone, UrgencyLevel } from '../../../../shared/types';
+import { DeliveryOrder } from '../../../../shared/types';
 import { DeliveryPriorityQueue } from '../../core/priority-queue';
 import { droneSimulator } from '../fleet/drone-simulator';
+import { OrderRepo, OrderItemRepo } from '../../database/repository';
 
-const orderHistory: Map<string, DeliveryOrder> = new Map();
 const orderQueue = new DeliveryPriorityQueue();
 
 export function getOrderQueue(): DeliveryPriorityQueue { return orderQueue; }
-export function getOrderHistory(): Map<string, DeliveryOrder> { return orderHistory; }
+
+export async function loadOrdersIntoQueue(): Promise<void> {
+  const orders = await OrderRepo.getAll();
+  for (const o of orders) {
+    if (o.status === 'pending' || o.status === 'validated') {
+      orderQueue.enqueue(o);
+    }
+  }
+}
 
 export class OrderWorkflow {
-  static create(data: Partial<DeliveryOrder>): DeliveryOrder {
-    const order: DeliveryOrder = {
-      id: require('uuid').v4(),
-      patientId: data.patientId || '',
-      healthCenterId: data.healthCenterId || '',
-      items: data.items || [],
-      urgency: data.urgency || 'routine',
-      status: 'pending',
-      priorityScore: 0,
-      requestedAt: new Date().toISOString(),
-      notes: data.notes,
-    };
-    orderHistory.set(order.id, order);
-    orderQueue.enqueue(order);
-    return order;
+  static async create(data: Partial<DeliveryOrder>): Promise<DeliveryOrder> {
+    const order = await OrderRepo.create(data) as DeliveryOrder;
+    const full = await OrderRepo.getById(order.id);
+    const result = full || order;
+    orderQueue.enqueue(result);
+    return result;
   }
 
-  static validate(orderId: string): DeliveryOrder | null {
-    const order = orderHistory.get(orderId);
+  static async validate(orderId: string): Promise<DeliveryOrder | null> {
+    const order = await OrderRepo.getById(orderId);
     if (!order || order.status !== 'pending') return null;
-    order.status = 'validated';
-    order.validatedAt = new Date().toISOString();
+    const updated = await OrderRepo.updateStatus(orderId, 'validated');
     orderQueue.updatePriority(orderId);
-    return order;
+    return updated;
   }
 
-  static assignDrone(orderId: string, droneId: string): DeliveryOrder | null {
-    const order = orderHistory.get(orderId);
+  static async assignDrone(orderId: string, droneId: string): Promise<DeliveryOrder | null> {
+    const order = await OrderRepo.getById(orderId);
     if (!order || order.status !== 'validated') return null;
-    order.droneId = droneId;
-    return order;
+    return OrderRepo.update(orderId, { drone_id: droneId });
   }
 
   static async dispatch(
@@ -49,7 +46,7 @@ export class OrderWorkflow {
     endCoords: { lat: number; lng: number },
     batteryLevel: number
   ): Promise<{ success: boolean; order: DeliveryOrder | null; reason?: string }> {
-    const order = orderHistory.get(orderId);
+    const order = await OrderRepo.getById(orderId);
     if (!order) return { success: false, order: null, reason: 'Commande introuvable' };
     if (order.status !== 'validated') {
       return { success: false, order: null, reason: 'Commande non validée' };
@@ -63,40 +60,49 @@ export class OrderWorkflow {
       return { success: false, order: null, reason: 'Échec lancement (batterie insuffisante ou chemin non trouvé)' };
     }
 
-    order.status = 'in_transit';
-    order.droneId = droneId;
-    order.verificationCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-    order.qrCode = `DRONEMED-${order.id.slice(0, 8)}-${order.verificationCode}`;
+    const verificationCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const qrCode = `DRONEMED-${orderId.slice(0, 8)}-${verificationCode}`;
+
+    const updated = await OrderRepo.update(orderId, {
+      status: 'in_transit',
+      drone_id: droneId,
+      verification_code: verificationCode,
+      qr_code: qrCode,
+    });
+
     orderQueue.remove(orderId);
-    return { success: true, order };
+    return { success: true, order: updated };
   }
 
-  static confirmDelivery(orderId: string, code: string): DeliveryOrder | null {
-    const order = orderHistory.get(orderId);
+  static async confirmDelivery(orderId: string, code: string): Promise<DeliveryOrder | null> {
+    const order = await OrderRepo.getById(orderId);
     if (!order) return null;
     if (order.verificationCode !== code) return null;
-    order.status = 'delivered';
-    order.deliveredAt = new Date().toISOString();
-    return order;
+    const updated = await OrderRepo.updateStatus(orderId, 'delivered');
+    return updated;
   }
 
-  static cancel(orderId: string): DeliveryOrder | null {
-    const order = orderHistory.get(orderId);
+  static async cancel(orderId: string): Promise<DeliveryOrder | null> {
+    const order = await OrderRepo.getById(orderId);
     if (!order) return null;
-    order.status = 'cancelled';
+    const updated = await OrderRepo.updateStatus(orderId, 'cancelled');
     orderQueue.remove(orderId);
-    return order;
+    return updated;
   }
 
   static getNextMission(): DeliveryOrder | null {
     return orderQueue.peek();
   }
 
-  static getAll(): DeliveryOrder[] {
-    return Array.from(orderHistory.values());
+  static async getAll(): Promise<DeliveryOrder[]> {
+    return OrderRepo.getAll();
   }
 
-  static getById(orderId: string): DeliveryOrder | undefined {
-    return orderHistory.get(orderId);
+  static async getById(orderId: string): Promise<DeliveryOrder | null> {
+    return OrderRepo.getById(orderId);
+  }
+
+  static async getByStatus(status: string): Promise<DeliveryOrder[]> {
+    return OrderRepo.getByStatus(status);
   }
 }

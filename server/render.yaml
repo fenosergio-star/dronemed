@@ -1,3 +1,9 @@
+databases:
+  - name: dronemed-db
+    databaseName: drone_med_mada
+    user: droneadmin
+    plan: free
+
 services:
   - type: web
     name: dronemed-backend
@@ -12,11 +18,18 @@ services:
         value: 3000
       - key: CORS_ORIGIN
         value: "*"
-      - key: DB_HOST
-        value: ""
-      - key: DB_USER
-        value: ""
-      - key: DB_PASSWORD
-        value: ""
-      - key: DB_NAME
-        value: ""
+      - fromDatabase:
+          name: dronemed-db
+          property: host
+      - fromDatabase:
+          name: dronemed-db
+          property: port
+      - fromDatabase:
+          name: dronemed-db
+          property: user
+      - fromDatabase:
+          name: dronemed-db
+          property: password
+      - fromDatabase:
+          name: dronemed-db
+          property: database

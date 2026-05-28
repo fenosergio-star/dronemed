@@ -7,6 +7,8 @@ import morgan from 'morgan';
 import routes from './routes';
 import { initWebSocket } from './modules/sync/websocket';
 import { droneSimulator } from './modules/fleet/drone-simulator';
+import { initPostgres } from './database/postgres';
+import { DroneRepo } from './database/repository';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000');
@@ -31,19 +33,32 @@ app.use((_req, res) => {
 
 initWebSocket(server);
 
-droneSimulator.registerDrone('alpha-01', 'Drone-Alpha', { lat: -18.7669, lng: 46.8691 });
-droneSimulator.registerDrone('beta-02', 'Drone-Beta', { lat: -19.8729, lng: 47.0338 });
-droneSimulator.registerDrone('gamma-03', 'Drone-Gamma', { lat: -17.8293, lng: 48.4335 });
-droneSimulator.registerDrone('delta-04', 'Drone-Delta', { lat: -20.2604, lng: 47.3462 });
+async function start() {
+  try {
+    await initPostgres();
+    const drones = await DroneRepo.getAll();
+    for (const d of drones) {
+      droneSimulator.registerDrone(d.id, d.name, {
+        lat: d.currentLat || -18.7669,
+        lng: d.currentLng || 46.8691,
+      });
+    }
+    console.log(`[Simulator] ${drones.length} drones chargés`);
+  } catch (err) {
+    console.warn('[PostgreSQL] Non disponible, démarrage sans persistance:', (err as Error).message);
+  }
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`
   ╔══════════════════════════════════════════╗
   ║   DroneMed Madagascar 2035 - Server     ║
   ║   🚁 API  → http://0.0.0.0:${PORT}         ║
   ║   📡 WS   → ws://0.0.0.0:${PORT}/ws       ║
   ╚══════════════════════════════════════════╝
-  `);
-});
+    `);
+  });
+}
+
+start();
 
 export default app;

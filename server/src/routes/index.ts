@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { InventoryController } from '../modules/inventory/inventory.controller';
+import { MedicationController } from '../modules/inventory/medication.controller';
 import { FleetController } from '../modules/fleet/fleet.controller';
 import { RoutingController } from '../modules/routing/routing.controller';
 import { OrdersController } from '../modules/orders/orders.controller';
@@ -22,6 +23,13 @@ api.get('/inventory/rotate', InventoryController.rotateStock);
 api.get('/inventory/:id', InventoryController.getItem);
 api.post('/inventory', InventoryController.addItem);
 api.delete('/inventory/:id', InventoryController.removeItem);
+
+// ─── Medications (Catalogue) ────────────────────
+api.get('/medications', MedicationController.getAll);
+api.get('/medications/:id', MedicationController.getById);
+api.post('/medications', jwtAuth, MedicationController.create);
+api.put('/medications/:id', jwtAuth, MedicationController.update);
+api.delete('/medications/:id', jwtAuth, MedicationController.remove);
 
 // ─── Fleet (Drones) ────────────────────────────────
 api.get('/fleet', FleetController.getAll);

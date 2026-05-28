@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { InventoryPage } from './pages/InventoryPage';
 import { FleetPage } from './pages/FleetPage';
+import { MedicationsPage } from './pages/MedicationsPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { MapPage } from './pages/MapPage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -32,6 +33,7 @@ export function App() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
       <Route path="/fleet" element={<ProtectedRoute><FleetPage /></ProtectedRoute>} />
+      <Route path="/medications" element={<ProtectedRoute><MedicationsPage /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
       <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />

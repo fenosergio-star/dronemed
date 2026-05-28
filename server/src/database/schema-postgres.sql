@@ -25,8 +25,25 @@ CREATE TABLE IF NOT EXISTS health_centers (
 CREATE INDEX IF NOT EXISTS idx_health_centers_region ON health_centers(region);
 CREATE INDEX IF NOT EXISTS idx_health_centers_district ON health_centers(district);
 
+CREATE TABLE IF NOT EXISTS medications (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('medicament','vaccin','poche_sang')),
+  description TEXT,
+  category VARCHAR(100),
+  default_storage_temp_min NUMERIC(5,2) NOT NULL DEFAULT 2,
+  default_storage_temp_max NUMERIC(5,2) NOT NULL DEFAULT 8,
+  unit VARCHAR(20) NOT NULL DEFAULT 'unité',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_medications_name ON medications(name);
+CREATE INDEX IF NOT EXISTS idx_medications_type ON medications(type);
+
 CREATE TABLE IF NOT EXISTS inventory (
   id VARCHAR(36) PRIMARY KEY,
+  medication_id VARCHAR(36) REFERENCES medications(id),
   name VARCHAR(200) NOT NULL,
   type VARCHAR(20) NOT NULL CHECK (type IN ('medicament','vaccin','poche_sang')),
   quantity INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_expiration ON inventory(expiration_date
 CREATE INDEX IF NOT EXISTS idx_inventory_batch ON inventory(batch_number);
 CREATE INDEX IF NOT EXISTS idx_inventory_type ON inventory(type);
 CREATE INDEX IF NOT EXISTS idx_inventory_center ON inventory(health_center_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_medication ON inventory(medication_id);
 
 CREATE TABLE IF NOT EXISTS drones (
   id VARCHAR(36) PRIMARY KEY,

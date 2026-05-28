@@ -75,5 +75,26 @@ async function seedDefaults(client: PoolClient | Pool): Promise<void> {
       [d.id, d.name, d.model, d.battery_capacity, d.current_battery, d.max_range_km, d.payload_capacity_kg, d.home_base_id, d.status]
     );
   }
+
+  const medications = [
+    { id: 'med-001', name: 'Artésunate 60mg', type: 'medicament', category: 'Antipaludéen', default_storage_temp_min: 2, default_storage_temp_max: 8, unit: 'ampoule' },
+    { id: 'med-002', name: 'Artéméther 80mg', type: 'medicament', category: 'Antipaludéen', default_storage_temp_min: 2, default_storage_temp_max: 8, unit: 'ampoule' },
+    { id: 'med-003', name: 'Quinine 500mg', type: 'medicament', category: 'Antipaludéen', default_storage_temp_min: 15, default_storage_temp_max: 25, unit: 'comprimé' },
+    { id: 'med-004', name: 'Vaccin ROR', type: 'vaccin', category: 'Vaccination', default_storage_temp_min: 2, default_storage_temp_max: 8, unit: 'dose' },
+    { id: 'med-005', name: 'Vaccin BCG', type: 'vaccin', category: 'Vaccination', default_storage_temp_min: 2, default_storage_temp_max: 8, unit: 'dose' },
+    { id: 'med-006', name: 'Poche sang O-', type: 'poche_sang', category: 'Transfusion', default_storage_temp_min: 2, default_storage_temp_max: 6, unit: 'poche' },
+    { id: 'med-007', name: 'Poche sang O+', type: 'poche_sang', category: 'Transfusion', default_storage_temp_min: 2, default_storage_temp_max: 6, unit: 'poche' },
+    { id: 'med-008', name: 'Amoxicilline 500mg', type: 'medicament', category: 'Antibiotique', default_storage_temp_min: 15, default_storage_temp_max: 25, unit: 'gélule' },
+    { id: 'med-009', name: 'Paracétamol 500mg', type: 'medicament', category: 'Antalgique', default_storage_temp_min: 15, default_storage_temp_max: 25, unit: 'comprimé' },
+    { id: 'med-010', name: 'Sérum antivenimeux', type: 'medicament', category: 'Urgence', default_storage_temp_min: 2, default_storage_temp_max: 8, unit: 'ampoule' },
+  ];
+  for (const m of medications) {
+    await client.query(
+      `INSERT INTO medications (id, name, type, category, default_storage_temp_min, default_storage_temp_max, unit)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO NOTHING`,
+      [m.id, m.name, m.type, m.category, m.default_storage_temp_min, m.default_storage_temp_max, m.unit]
+    );
+  }
+
   console.log('[PostgreSQL] Données par défaut insérées');
 }

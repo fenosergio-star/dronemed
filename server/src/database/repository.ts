@@ -44,10 +44,10 @@ export const InventoryRepo = {
   async create(data: any) {
     const id = data.id || uuidv4();
     await query(
-      `INSERT INTO inventory (id, name, type, quantity, expiration_date, batch_number, storage_temp_min, storage_temp_max, health_center_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      `INSERT INTO inventory (id, name, type, quantity, expiration_date, batch_number, storage_temp_min, storage_temp_max, health_center_id, medication_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [id, data.name, data.type, data.quantity || 0, data.expirationDate, data.batchNumber,
-       data.storageTempMin, data.storageTempMax, data.healthCenterId || 'hc-001', data.createdBy || null]
+       data.storageTempMin, data.storageTempMax, data.healthCenterId || 'hc-001', data.medicationId || null, data.createdBy || null]
     );
     return this.getById(id);
   },
@@ -80,6 +80,7 @@ function mapInventory(r: any) {
     id: r.id,
     name: r.name,
     type: r.type,
+    medicationId: r.medication_id,
     quantity: r.quantity,
     expirationDate: r.expiration_date ? r.expiration_date.toISOString().slice(0, 10) : '',
     batchNumber: r.batch_number,
@@ -88,6 +89,62 @@ function mapInventory(r: any) {
     healthCenterId: r.health_center_id,
     createdBy: r.created_by,
     createdAt: r.created_at ? r.created_at.toISOString() : new Date().toISOString(),
+  };
+}
+
+export const MedicationRepo = {
+  async getAll() {
+    const { rows } = await query('SELECT * FROM medications ORDER BY category, name');
+    return rows.map(mapMedication);
+  },
+  async getById(id: string) {
+    const { rows } = await query('SELECT * FROM medications WHERE id = $1', [id]);
+    return rows.length ? mapMedication(rows[0]) : null;
+  },
+  async create(data: any) {
+    const id = data.id || uuidv4();
+    await query(
+      `INSERT INTO medications (id, name, type, description, category, default_storage_temp_min, default_storage_temp_max, unit)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [id, data.name, data.type, data.description || null, data.category || null,
+       data.defaultStorageTempMin ?? 2, data.defaultStorageTempMax ?? 8, data.unit || 'unité']
+    );
+    return this.getById(id);
+  },
+  async update(id: string, data: any) {
+    const sets: string[] = [];
+    const vals: any[] = [];
+    let idx = 1;
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== undefined) {
+        sets.push(`${toSnake(k)} = $${idx}`);
+        vals.push(v);
+        idx++;
+      }
+    }
+    if (sets.length === 0) return this.getById(id);
+    sets.push('updated_at = NOW()');
+    vals.push(id);
+    await query(`UPDATE medications SET ${sets.join(', ')} WHERE id = $${idx}`, vals);
+    return this.getById(id);
+  },
+  async remove(id: string) {
+    const { rowCount } = await query('DELETE FROM medications WHERE id = $1', [id]);
+    return rowCount! > 0;
+  },
+};
+
+function mapMedication(r: any) {
+  return {
+    id: r.id,
+    name: r.name,
+    type: r.type,
+    description: r.description,
+    category: r.category,
+    defaultStorageTempMin: parseFloat(r.default_storage_temp_min),
+    defaultStorageTempMax: parseFloat(r.default_storage_temp_max),
+    unit: r.unit,
+    isActive: r.is_active,
   };
 }
 

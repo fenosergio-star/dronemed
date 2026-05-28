@@ -7,26 +7,27 @@ type Lang = 'fr' | 'mg';
 const labels: Record<Lang, typeof navFr> = {
   fr: {
     dashboard: 'Tableau de Bord', inventory: 'Inventaire',
-    fleet: 'Flotte', orders: 'Commandes', map: 'Carte',
+    medications: 'Médicaments', fleet: 'Flotte', orders: 'Commandes', map: 'Carte',
     reports: 'Rapports', logout: 'Déconnexion',
     lang: 'MG', langLabel: 'Malagasy',
   },
   mg: {
     dashboard: 'Tabilao', inventory: 'Fitehirizana',
-    fleet: 'Drone', orders: 'Baiko', map: 'Sarintany',
+    medications: 'Fanafody', fleet: 'Drone', orders: 'Baiko', map: 'Sarintany',
     reports: 'Tatitra', logout: 'Fialana',
     lang: 'FR', langLabel: 'Français',
   },
 };
 
 const navFr = {
-  dashboard: '', inventory: '', fleet: '', orders: '', map: '',
+  dashboard: '', inventory: '', medications: '', fleet: '', orders: '', map: '',
   reports: '', logout: '', lang: '', langLabel: '',
 };
 
 const navItems = [
   { to: '/', key: 'dashboard' as const, icon: '📊' },
   { to: '/inventory', key: 'inventory' as const, icon: '📦' },
+  { to: '/medications', key: 'medications' as const, icon: '💊' },
   { to: '/fleet', key: 'fleet' as const, icon: '🚁' },
   { to: '/orders', key: 'orders' as const, icon: '📋' },
   { to: '/map', key: 'map' as const, icon: '🗺️' },

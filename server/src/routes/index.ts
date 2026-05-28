@@ -6,6 +6,9 @@ import { OrdersController } from '../modules/orders/orders.controller';
 import { StatisticsController } from '../modules/orders/statistics.controller';
 import { OrderWorkflowController } from '../modules/orders/workflow.controller';
 import { SyncController } from '../modules/sync/sync.controller';
+import { AuthController } from '../modules/auth/auth.controller';
+import { ReportsController } from '../modules/reports/reports.controller';
+import { jwtAuth } from '../middleware/auth';
 
 const router = Router();
 const api = Router();
@@ -67,6 +70,15 @@ api.post('/sync/push', SyncController.pushFromMobile);
 api.get('/sync/pull', SyncController.pullForMobile);
 api.get('/sync/devices', SyncController.getDeviceStatus);
 api.get('/sync/stats', SyncController.getSyncStats);
+
+// ─── Auth ──────────────────────────────────────────
+api.post('/auth/register', AuthController.register);
+api.post('/auth/login', AuthController.login);
+api.get('/auth/me', jwtAuth, AuthController.me);
+
+// ─── Reports ───────────────────────────────────────
+api.get('/reports/user-transactions', jwtAuth, ReportsController.userTransactions);
+api.get('/reports/user-activity', jwtAuth, ReportsController.userActivityLog);
 
 // ─── Health ────────────────────────────────────────
 api.get('/health', (_req, res) => {

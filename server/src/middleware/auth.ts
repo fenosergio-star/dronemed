@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dronemed-mada-2035-jwt-secret';
 
 export function apiKeyAuth(req: Request, res: Response, next: NextFunction): void {
   const apiKey = req.headers['x-api-key'] as string;
@@ -24,6 +27,23 @@ export function deviceAuth(req: Request, res: Response, next: NextFunction): voi
     return;
   }
   next();
+}
+
+export function jwtAuth(req: Request, res: Response, next: NextFunction): void {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    res.status(401).json({ success: false, error: 'Token manquant' });
+    return;
+  }
+
+  try {
+    const token = header.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
+    (req as any).user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ success: false, error: 'Token invalide ou expiré' });
+  }
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {

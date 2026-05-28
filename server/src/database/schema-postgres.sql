@@ -1,3 +1,14 @@
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(36) PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  role VARCHAR(20) NOT NULL CHECK (role IN ('pharmacien','agent','admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
 CREATE TABLE IF NOT EXISTS health_centers (
   id VARCHAR(36) PRIMARY KEY,
   name VARCHAR(200) NOT NULL,
@@ -24,6 +35,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   storage_temp_min NUMERIC(5,2) NOT NULL,
   storage_temp_max NUMERIC(5,2) NOT NULL,
   health_center_id VARCHAR(36) NOT NULL REFERENCES health_centers(id) ON DELETE CASCADE,
+  created_by VARCHAR(36) REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -82,7 +94,8 @@ CREATE TABLE IF NOT EXISTS delivery_orders (
   requested_at TIMESTAMPTZ DEFAULT NOW(),
   validated_at TIMESTAMPTZ,
   delivered_at TIMESTAMPTZ,
-  notes TEXT
+  notes TEXT,
+  created_by VARCHAR(36) REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_orders_status ON delivery_orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_urgency ON delivery_orders(urgency);

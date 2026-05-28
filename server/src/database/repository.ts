@@ -44,10 +44,10 @@ export const InventoryRepo = {
   async create(data: any) {
     const id = data.id || uuidv4();
     await query(
-      `INSERT INTO inventory (id, name, type, quantity, expiration_date, batch_number, storage_temp_min, storage_temp_max, health_center_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      `INSERT INTO inventory (id, name, type, quantity, expiration_date, batch_number, storage_temp_min, storage_temp_max, health_center_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       [id, data.name, data.type, data.quantity || 0, data.expirationDate, data.batchNumber,
-       data.storageTempMin, data.storageTempMax, data.healthCenterId || 'hc-001']
+       data.storageTempMin, data.storageTempMax, data.healthCenterId || 'hc-001', data.createdBy || null]
     );
     return this.getById(id);
   },
@@ -86,6 +86,7 @@ function mapInventory(r: any) {
     storageTempMin: parseFloat(r.storage_temp_min),
     storageTempMax: parseFloat(r.storage_temp_max),
     healthCenterId: r.health_center_id,
+    createdBy: r.created_by,
     createdAt: r.created_at ? r.created_at.toISOString() : new Date().toISOString(),
   };
 }
@@ -168,10 +169,10 @@ export const OrderRepo = {
   async create(data: any) {
     const id = data.id || uuidv4();
     await query(
-      `INSERT INTO delivery_orders (id, patient_id, health_center_id, urgency, status, priority_score, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      `INSERT INTO delivery_orders (id, patient_id, health_center_id, urgency, status, priority_score, notes, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [id, data.patientId || '', data.healthCenterId || '', data.urgency || 'routine',
-       data.status || 'pending', data.priorityScore || 0, data.notes || null]
+       data.status || 'pending', data.priorityScore || 0, data.notes || null, data.createdBy || null]
     );
     if (data.items?.length) {
       for (const item of data.items) {
@@ -232,6 +233,7 @@ function mapOrder(r: any) {
     validatedAt: r.validated_at ? r.validated_at.toISOString() : undefined,
     deliveredAt: r.delivered_at ? r.delivered_at.toISOString() : undefined,
     notes: r.notes,
+    createdBy: r.created_by,
   };
 }
 

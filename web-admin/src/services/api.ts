@@ -78,4 +78,17 @@ export const fleetSimAPI = {
   maintenance: (id: string, active: boolean) => api.post(`/fleet/${id}/maintenance`, { active }),
 };
 
+export const authAPI = {
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  register: (name: string, email: string, password: string, role?: string) =>
+    api.post('/auth/register', { name, email, password, role }),
+  me: () => api.get('/auth/me'),
+};
+
+export const reportsAPI = {
+  userActivity: () => api.get('/reports/user-activity'),
+  userTransactions: (userId: string) => api.get('/reports/user-transactions', { params: { userId } }),
+  exportCSV: (params?: any) => api.get('/reports/user-transactions', { params: { ...params, format: 'csv' }, responseType: 'blob' }),
+};
+
 export default api;

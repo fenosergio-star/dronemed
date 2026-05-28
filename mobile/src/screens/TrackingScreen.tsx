@@ -1,0 +1,108 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert, FlatList, ActivityIndicator } from 'react-native';
+import { fr } from '../i18n/fr';
+import { mg } from '../i18n/mg';
+import { getActiveDeliveries, confirmDelivery } from '../services/api';
+
+const i18n = { fr, mg };
+type Lang = 'fr' | 'mg';
+
+export default function TrackingScreen({ navigation }: any) {
+  const [lang, setLang] = useState<Lang>('fr');
+  const t = i18n[lang];
+  const [flights, setFlights] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [code, setCode] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    loadFlights();
+    connectWs();
+    const interval = setInterval(loadFlights, 10000);
+    return () => { clearInterval(interval); ws.current?.close(); };
+  }, []);
+
+  function connectWs() {
+    ws.current = new WebSocket('ws://192.168.1.100:3000/ws');
+    ws.current.onmessage = (e) => {
+      try { const msg = JSON.parse(e.data); if (msg.type === 'drone:update' || msg.type === 'fleet:snapshot') loadFlights(); }
+      catch {}
+    };
+  }
+
+  async function loadFlights() {
+    try { const data = await getActiveDeliveries(); setFlights(Array.isArray(data) ? data : []); }
+    catch { setFlights([]); }
+    setLoading(false);
+  }
+
+  async function handleConfirm(orderId: string) {
+    if (!code) { Alert.alert('Erreur', t.tracking.deliveryCode); return; }
+    setConfirming(true);
+    try {
+      await confirmDelivery(orderId, code);
+      Alert.alert(t.tracking.success);
+      setCode('');
+      setSelectedOrder(null);
+      loadFlights();
+    } catch { Alert.alert(t.tracking.errorCode); }
+    setConfirming(false);
+  }
+
+  return (
+    <View style={s.container}>
+      <Text style={s.title}>{t.tracking.title}</Text>
+      <TouchableOpacity style={s.langBtn} onPress={() => setLang(lang === 'fr' ? 'mg' : 'fr')}>
+        <Text style={s.langBtnText}>{lang === 'fr' ? 'MG' : 'FR'}</Text>
+      </TouchableOpacity>
+
+      {loading ? <ActivityIndicator style={{ marginTop: 40 }} /> : flights.length === 0 ? (
+        <Text style={s.empty}>{t.tracking.noActive}</Text>
+      ) : (
+        <FlatList data={flights} keyExtractor={(item) => item.id || item.orderId}
+          renderItem={({ item }) => (
+            <View style={s.card}>
+              <Text style={s.droneName}>{t.tracking.drone}: {item.droneId || item.droneName}</Text>
+              <Text>{t.tracking.status}: {item.status}</Text>
+              <Text>{t.tracking.battery}: {item.battery != null ? `${item.battery}%` : 'N/A'}</Text>
+              <Text>{t.tracking.position}: {item.lat?.toFixed(4)}, {item.lng?.toFixed(4)}</Text>
+              {item.orderId && (
+                <TouchableOpacity style={s.confirmBtn} onPress={() => setSelectedOrder(item.orderId)}>
+                  <Text style={s.confirmBtnText}>{t.tracking.confirm}</Text>
+                </TouchableOpacity>
+              )}
+              {selectedOrder === item.orderId && (
+                <View style={s.codeBox}>
+                  <Text style={s.label}>{t.tracking.deliveryCode}</Text>
+                  <TextInput style={s.input} value={code} onChangeText={setCode} placeholder="000000" keyboardType="number-pad" maxLength={6} />
+                  <TouchableOpacity style={s.submitBtn} onPress={() => handleConfirm(item.orderId)} disabled={confirming}>
+                    {confirming ? <ActivityIndicator color="#fff" /> : <Text style={s.submitBtnText}>{t.tracking.confirmDelivery}</Text>}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f0f4f8', padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#1a73e8', textAlign: 'center', marginTop: 40, marginBottom: 20 },
+  langBtn: { position: 'absolute', right: 16, top: 44, backgroundColor: '#1a73e8', padding: 8, borderRadius: 8 },
+  langBtnText: { color: '#fff', fontWeight: 'bold' },
+  empty: { textAlign: 'center', color: '#999', marginTop: 60, fontSize: 16 },
+  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, elevation: 2 },
+  droneName: { fontSize: 16, fontWeight: '700', color: '#1a73e8', marginBottom: 4 },
+  confirmBtn: { backgroundColor: '#34a853', padding: 10, borderRadius: 8, marginTop: 8, alignItems: 'center' },
+  confirmBtnText: { color: '#fff', fontWeight: '700' },
+  codeBox: { marginTop: 12, padding: 12, backgroundColor: '#f8f9fa', borderRadius: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 4 },
+  input: { backgroundColor: '#fff', borderRadius: 8, padding: 10, fontSize: 18, textAlign: 'center', borderWidth: 1, borderColor: '#ddd', letterSpacing: 8 },
+  submitBtn: { backgroundColor: '#1a73e8', padding: 12, borderRadius: 8, marginTop: 8, alignItems: 'center' },
+  submitBtnText: { color: '#fff', fontWeight: '700' },
+});

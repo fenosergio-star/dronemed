@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: dronemed-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DB_HOST
+        value: ""
+      - key: DB_USER
+        value: ""
+      - key: DB_PASSWORD
+        value: ""
+      - key: DB_NAME
+        value: ""

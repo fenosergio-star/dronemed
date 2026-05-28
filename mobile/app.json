@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "DroneMed Agent Rural",
+    "slug": "drone-med-mada-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a73e8"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "mada.dronemed.agent"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a73e8"
+      },
+      "package": "mada.dronemed.agent",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "INTERNET"
+      ]
+    },
+    "plugins": [
+      "expo-location",
+      "expo-camera",
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "apiUrl": "http://10.225.103.33:3000/api"
+    }
+  }
+}

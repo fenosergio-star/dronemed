@@ -40,7 +40,7 @@
       "expo-secure-store"
     ],
     "extra": {
-      "apiUrl": "https://dronemed-backend.onrender.com",
+      "apiUrl": "https://dronemed-backend.onrender.com/api/v1",
       "eas": {
         "projectId": "2b8db00f-b51c-4d9d-bda5-c8e0e2d52717"
       }

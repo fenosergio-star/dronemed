@@ -4,7 +4,7 @@ import {
   cacheCenters, cacheMedications,
   setLastSync,
 } from './database';
-import { syncOrders, syncIncidents, getCenters, getMedications } from './api';
+import { syncPush, getCenters, getMedications } from './api';
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -20,19 +20,12 @@ export async function doSync(): Promise<{ orders: number; incidents: number }> {
   const result = { orders: 0, incidents: 0 };
   try {
     const pendingOrders = await getPendingOrders();
-    if (pendingOrders.length > 0) {
-      const res = await syncOrders(pendingOrders);
-      if (res?.synced) {
-        for (const o of pendingOrders) { await markOrderSynced(o.id); }
-        result.orders = pendingOrders.length;
-      }
-    }
     const pendingIncidents = await getUnsyncedIncidents();
-    if (pendingIncidents.length > 0) {
-      const res = await syncIncidents(pendingIncidents);
+    if (pendingOrders.length > 0 || pendingIncidents.length > 0) {
+      const res = await syncPush(pendingOrders, pendingIncidents);
       if (res?.synced) {
-        for (const i of pendingIncidents) { await markIncidentSynced(i.id); }
-        result.incidents = pendingIncidents.length;
+        for (const o of pendingOrders) { await markOrderSynced(o.id); result.orders++; }
+        for (const i of pendingIncidents) { await markIncidentSynced(i.id); result.incidents++; }
       }
     }
     const [centers, meds] = await Promise.all([getCenters(), getMedications()]);

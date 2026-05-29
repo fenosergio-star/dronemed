@@ -2,7 +2,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { getToken } from './auth';
 
-const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://10.225.103.33:3000/api';
+const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000/api/v1';
 
 export const api = axios.create({ baseURL: API_BASE, timeout: 15000 });
 
@@ -26,7 +26,7 @@ export async function confirmDelivery(orderId: string, code: string) {
 }
 
 export async function getMyOrders() {
-  const { data } = await api.get('/orders/my');
+  const { data } = await api.get('/orders');
   return data;
 }
 
@@ -38,18 +38,18 @@ export async function reportIncident(incident: any) {
 
 // -- Fleet --
 export async function getActiveDeliveries() {
-  const { data } = await api.get('/fleet/active');
+  const { data } = await api.get('/fleet/available');
   return data;
 }
 
 // -- Sync --
-export async function syncOrders(orders: any[]) {
-  const { data } = await api.post('/sync/orders', { orders });
+export async function syncPush(orders: any[], incidents: any[]) {
+  const { data } = await api.post('/sync/push', { orders, incidents });
   return data;
 }
 
-export async function syncIncidents(incidents: any[]) {
-  const { data } = await api.post('/sync/incidents', { incidents });
+export async function syncPull() {
+  const { data } = await api.get('/sync/pull');
   return data;
 }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert, FlatList, ActivityIndicator, Modal, Dimensions } from 'react-native';
 import { fr } from '../i18n/fr';
 import { mg } from '../i18n/mg';
+import Constants from 'expo-constants';
 import { getActiveDeliveries, confirmDelivery } from '../services/api';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
@@ -31,7 +32,9 @@ export default function TrackingScreen({ navigation }: any) {
 
   function connectWs() {
     try {
-      ws.current = new WebSocket('ws://192.168.1.100:3000/ws');
+      const apiUrl = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000/api/v1';
+      const wsUrl = apiUrl.replace(/^http/, 'ws').replace('/api/v1', '') + '/ws';
+      ws.current = new WebSocket(wsUrl);
       ws.current.onmessage = (e) => {
         try { const msg = JSON.parse(e.data); if (msg.type === 'drone:update' || msg.type === 'fleet:snapshot') loadFlights(); }
         catch {}

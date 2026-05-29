@@ -130,7 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
 CREATE TABLE IF NOT EXISTS incident_reports (
   id VARCHAR(36) PRIMARY KEY,
-  order_id VARCHAR(36) NOT NULL REFERENCES delivery_orders(id),
+  order_id VARCHAR(36) REFERENCES delivery_orders(id),
   type VARCHAR(20) NOT NULL CHECK (type IN ('weather','drone_damage','battery','obstacle','other')),
   description TEXT NOT NULL,
   lat NUMERIC(10,7),
@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS incident_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_incidents_type ON incident_reports(type);
 CREATE INDEX IF NOT EXISTS idx_incidents_resolved ON incident_reports(resolved);
+ALTER TABLE incident_reports ALTER COLUMN order_id DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS flight_logs (
   id VARCHAR(36) PRIMARY KEY,

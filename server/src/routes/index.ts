@@ -9,6 +9,8 @@ import { OrderWorkflowController } from '../modules/orders/workflow.controller';
 import { SyncController } from '../modules/sync/sync.controller';
 import { AuthController } from '../modules/auth/auth.controller';
 import { ReportsController } from '../modules/reports/reports.controller';
+import { IncidentController } from '../modules/incidents/incident.controller';
+import { HealthCenterController } from '../modules/health/health-center.controller';
 import { jwtAuth } from '../middleware/auth';
 
 const router = Router();
@@ -72,6 +74,13 @@ api.get('/stats/dashboard', StatisticsController.getDashboard);
 api.get('/stats/delivery-times', StatisticsController.getDeliveryTimes);
 api.get('/stats/fleet', StatisticsController.getFleetStats);
 api.get('/stats/inventory', StatisticsController.getInventoryAlerts);
+
+// ─── Health Centers ────────────────────────────────
+api.get('/centers', HealthCenterController.getAll);
+
+// ─── Incidents ─────────────────────────────────────
+api.post('/incidents', IncidentController.create);
+api.get('/incidents', IncidentController.getAll);
 
 // ─── Sync (Mobile Offline) ─────────────────────────
 api.post('/sync/push', SyncController.pushFromMobile);

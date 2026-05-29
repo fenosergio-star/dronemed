@@ -131,7 +131,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE TABLE IF NOT EXISTS incident_reports (
   id VARCHAR(36) PRIMARY KEY,
   order_id VARCHAR(36) REFERENCES delivery_orders(id),
-  type VARCHAR(20) NOT NULL CHECK (type IN ('weather','drone_damage','battery','obstacle','other')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('weather','drone_damage','battery','obstacle','other','droneDown','wrongDelivery','missingProducts','patientRefused')),
   description TEXT NOT NULL,
   lat NUMERIC(10,7),
   lng NUMERIC(10,7),

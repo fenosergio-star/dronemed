@@ -50,8 +50,7 @@ export function RegisterPage() {
             <select value={role} onChange={e => setRole(e.target.value)}>
               <option value="agent">Agent de terrain</option>
               <option value="pharmacien">Pharmacien</option>
-              <option value="admin">Administrateur</option>
-            </select>
+              </select>
           </div>
           {error && <div className="form-error">{error}</div>}
           <button type="submit" className="btn-primary" disabled={busy}>

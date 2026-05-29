@@ -16,7 +16,7 @@ export class AuthController {
         res.status(400).json({ success: false, error: 'email, password et name requis' });
         return;
       }
-      const validRoles = ['pharmacien', 'agent', 'admin'];
+      const validRoles = ['pharmacien', 'agent'];
       const userRole = role && validRoles.includes(role) ? role : 'agent';
 
       const existing = await pool().query('SELECT id FROM users WHERE email = $1', [email]);

@@ -1,5 +1,10 @@
-import { getPendingOrders, markOrderSynced, getUnsyncedIncidents, markIncidentSynced, saveOrderOffline, getLastSync, cacheCenters } from './database';
-import { syncOrders, syncIncidents, getCenters } from './api';
+import {
+  getPendingOrders, markOrderSynced,
+  getUnsyncedIncidents, markIncidentSynced,
+  cacheCenters, cacheMedications,
+  setLastSync,
+} from './database';
+import { syncOrders, syncIncidents, getCenters, getMedications } from './api';
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -30,10 +35,12 @@ export async function doSync(): Promise<{ orders: number; incidents: number }> {
         result.incidents = pendingIncidents.length;
       }
     }
-    const centers = await getCenters();
+    const [centers, meds] = await Promise.all([getCenters(), getMedications()]);
     if (centers?.length) { await cacheCenters(centers); }
-  } catch (e) {
-    console.warn('Sync failed (offline):', e);
+    if (meds?.length) { await cacheMedications(meds); }
+    await setLastSync(new Date().toISOString());
+  } catch {
+    console.warn('Sync failed (offline)');
   }
   return result;
 }

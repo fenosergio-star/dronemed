@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { fr } from '../i18n/fr';
 import { mg } from '../i18n/mg';
-import { saveOrderOffline, getCachedCenters } from '../services/database';
+import { saveOrderOffline, getCachedCenters, getCachedMedications } from '../services/database';
 import { submitOrder } from '../services/api';
 
 const i18n = { fr, mg };
@@ -40,21 +40,28 @@ function SimplePicker({ label, value, items, onValueChange }: { label: string; v
 export default function NewOrderScreen({ navigation }: any) {
   const [lang, setLang] = useState<Lang>('fr');
   const t = i18n[lang];
-  const [form, setForm] = useState({ patientName: '', age: '', sex: 'male', contact: '', bloodGroup: 'O+', symptoms: '', products: '', urgency: 'medium', centerId: '' });
+  const [form, setForm] = useState({ patientName: '', age: '', sex: 'male', contact: '', bloodGroup: 'O+', symptoms: '', products: '', urgency: 'medium', centerId: '', medicationId: '', medicationQty: '1' });
   const [centers, setCenters] = useState<any[]>([]);
+  const [medications, setMedications] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { loadCenters(); }, []);
+  useEffect(() => { loadCached(); }, []);
 
-  async function loadCenters() {
-    const cached = await getCachedCenters();
-    setCenters(cached);
+  async function loadCached() {
+    const [c, m] = await Promise.all([getCachedCenters(), getCachedMedications()]);
+    setCenters(c || []);
+    setMedications(m || []);
   }
 
   async function handleSubmit() {
     if (!form.patientName || !form.age) { Alert.alert('Erreur', 'Nom et âge requis'); return; }
     setSubmitting(true);
-    const order = { ...form, age: parseInt(form.age), id: Date.now().toString() };
+    const order = {
+      ...form,
+      age: parseInt(form.age),
+      medicationQty: parseInt(form.medicationQty) || 1,
+      id: Date.now().toString(),
+    };
     await saveOrderOffline(order);
     try { await submitOrder(order); } catch {}
     Alert.alert('Succès', t.order.success);
@@ -72,6 +79,29 @@ export default function NewOrderScreen({ navigation }: any) {
           <Text style={s.langText}>{lang === 'fr' ? 'MG' : 'FR'}</Text>
         </TouchableOpacity>
       </View>
+
+      <Text style={s.label}>{t.order.selectCenter}</Text>
+      <SimplePicker
+        label={t.order.selectCenter}
+        value={form.centerId}
+        items={(centers || []).map((c: any) => ({ label: c.name, value: String(c.id) }))}
+        onValueChange={(v) => update('centerId', v)}
+      />
+
+      <Text style={s.label}>Médicament</Text>
+      <SimplePicker
+        label="Médicament"
+        value={form.medicationId}
+        items={[{ label: 'Aucun', value: '' }, ...(medications || []).map((m: any) => ({ label: `${m.name} (${m.dosage || ''})`, value: String(m.id) }))]}
+        onValueChange={(v) => update('medicationId', v)}
+      />
+
+      {form.medicationId ? (
+        <>
+          <Text style={s.label}>Quantité</Text>
+          <TextInput style={s.input} value={form.medicationQty} onChangeText={(v) => update('medicationQty', v)} keyboardType="numeric" />
+        </>
+      ) : null}
 
       <Text style={s.label}>{t.order.patientName}</Text>
       <TextInput style={s.input} value={form.patientName} onChangeText={(v) => update('patientName', v)} />
